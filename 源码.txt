@@ -1,0 +1,598 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+ 
+#define MAX 100
+#define TRUE 1
+#define FALSE 0
+#define Status int
+ 
+typedef struct
+{
+	char name[12];
+	char addr[40];
+	char mphone[12];
+	char tel[14];
+	char sex;
+	unsigned char age;
+}DataType;
+ 
+typedef struct node
+{
+	DataType data;
+	struct node *next;
+}Node;
+ 
+typedef Node *llist;
+ 
+ 
+char *menu_1[] = {
+	"*********主菜单********\n",
+	"1.增加记录\n",
+	"2.删除记录\n",
+	"3.修改记录\n",
+	"4.查询记录\n",
+	"0.退出程序\n",
+	"***********************\n"
+	};
+char *menu_query1[] = {
+	"*******查询菜单********\n",
+	"1.按姓名查询\n",
+	"2.按手机号码查询\n",
+	"3.全部输出\n",
+	"0.返回主菜单\n",
+	"***********************\n"
+	};
+char *menu_delete1[] = {
+	"********删除菜单*******\n",
+	"1.按姓名删除\n",
+	"2.按手机号码删除\n",
+	"3.全部删除\n"
+	"0.返回主菜单\n",
+	"***********************\n"
+	};
+char *menu_modify1[] = {
+	"********修改菜单*******\n",
+	"1.按姓名查找修改\n",
+	"2.按手机号码查找修改\n",
+	"0.返回主菜单\n",
+	"***********************\n"
+	};
+/**********************
+函数名称:fgets_wrapper
+参数：buffer输入缓冲区指针;buflen最大输入字符数，实际最大输入buflen-1; fp输入流
+功能：重新封装fgets函数;
+      解决fgets输入时最大长度超过buflen-1个字符后输入缓冲区遗留问题及输入包含'\n'问题
+区别: scanf("%s",buffer) 输入字符串不能有空格；
+      gets(buffer)输入字符串超过buffer长度导致溢出错误；
+	  fgets(buffer,buflen,fp)最大输入buflen-1个字符，'\n'会被输入；输入被截断后输入缓冲区有遗留
+***********************/
+char *fgets_wrapper(char *buffer, size_t buflen, FILE *fp)
+{
+	if (fgets(buffer, buflen, fp) != 0)
+	{
+	size_t len = strlen(buffer);
+	if (len > 0 && buffer[len-1] == '\n')
+	{
+		buffer[len-1] = '\0';
+	}
+	//清空剩余的数据
+	else
+	{
+		int ch;
+		while ((ch = getc(fp)) != EOF && ch != '\n');
+	}
+	return buffer;
+	}
+	return 0;
+}
+ 
+char menu(char *str[],int len)
+{
+	char sel;
+	int i;
+	for (i=0 ; i<len; i++)
+	{
+		printf("%s",str[i]);
+	}
+	printf("请输入您的选择:");
+	scanf(" %c",&sel);
+    getchar();
+	return sel;
+}
+ 
+Status InitList(llist *L)
+{
+	*L = (llist)malloc(sizeof(Node));
+	if ( NULL == *L)
+	{
+		return FALSE;
+	}
+	else
+	{
+		(*L)->next = NULL;
+		return TRUE;
+	}
+}
+int ListLength(llist L)
+{
+	int i = 0;
+	llist p;
+	p = L->next;
+    while (NULL != p)
+	{
+		i++;
+		p = p->next;
+	}
+	return i;
+}
+ 
+Status ListEmpty(llist L)
+{
+	if ( 0 == ListLength(L))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+ 
+Status ListInsert(llist *L,int i,DataType e)
+{
+	int j=1;
+	llist p,q;
+	if (i<1 || i > ListLength(*L)+1)
+	{
+		return FALSE;
+	}
+	p = (*L);
+	while (NULL != p && j<i)
+	{
+		p = p->next;
+		j++;
+	}
+	q = (llist)malloc(sizeof(Node));
+	if ( NULL == q)
+	{
+		printf("内存分配失败，按任意键退出...\n");
+		getchar();
+		exit(0);
+	}
+	q->data = e;
+	q->next = p->next;
+	p->next = q;
+	return TRUE;
+}
+ 
+Status input(DataType *e)
+{
+	int age;
+	printf("请输入姓名:");
+	fgets_wrapper(e->name,12,stdin);
+	printf("请输入地址:");
+	fgets_wrapper(e->addr,40,stdin);
+	printf("请输入手机号:");
+	fgets_wrapper(e->mphone,12,stdin);
+	printf("请输入电话号码:");
+	fgets_wrapper(e->tel,14,stdin);
+	printf("请输入性别:");
+	scanf(" %c",&(e->sex));
+	printf("请输入年龄:");
+	scanf("%d",&age);
+	getchar();
+	e->age = (unsigned char)age;
+	return TRUE;
+}
+ 
+Status GetElem(llist L,int i,DataType *e)
+{
+	int j=1;
+	llist p;
+	if (i<1 || i > ListLength(L))
+	{
+		return FALSE;
+	}
+	p = L;
+	while (NULL != p && j<i)
+	{
+		p = p->next;
+		j++;
+	}
+	p = p->next;
+	*e = p->data;
+	return TRUE;
+}
+ 
+ 
+Status output(DataType e)
+{
+	char sex[3];
+	printf("姓名:%s\n",e.name);
+	printf("地址:%s\n",e.addr);
+	printf("手机号:%s\n",e.mphone);
+	printf("电话号码:%s\n",e.tel);
+	if ( '0' == e.sex )
+	{
+		strcpy(sex,"女");
+	}
+	else if ( '1' == e.sex)
+	{
+		strcpy(sex,"男");
+	}
+	else
+	{
+		strcpy(sex,"错");
+	}
+	printf("性别:%s\n",sex);
+	printf("年龄:%d\n",(int)e.age);
+	return TRUE;
+}
+ 
+Status ListDelete(llist *L,int i,DataType *e)
+{
+	int j = 1;
+	llist p,q;
+	if ( i<1 || i>ListLength(*L))
+	{
+		return FALSE;
+	}
+	p = (*L);
+	while (NULL != p && j<i)
+	{
+		p = p->next;
+		j++;
+	}
+	q = p->next;
+	p->next = q->next;
+	*e = q->data;
+	free(q);
+	return TRUE;
+}
+Status ClearList(llist *L)
+{
+	int i = 0,len;
+	llist p,q;
+	if (NULL == (*L)->next)
+	{
+		return TRUE;
+	}
+	p = q = (*L)->next;
+	do
+	{
+	    p = p->next;
+		free(q);
+		i++;
+		q = p;
+	}while(NULL != p);
+	(*L)->next = NULL;
+	printf("cleared item = %d\n",i);
+	return TRUE;
+}
+//flag=0 按姓名查询, flag=1 按手机号码查询
+//str 传递查询的内容 flag=0 str就是要查询的姓名 flag=1 str就是要查询的手机号
+int LocateList(llist L, char *str, int flag)
+{
+	int i;
+	llist p;
+	p = L->next;
+	if (NULL == L->next)
+	{
+		return -1;
+	}
+	switch (flag)
+	{
+	case 0:
+	{
+		i = 1;
+		while(NULL != p)
+		{
+			if (!strcmp(str,p->data.name)) 
+			{
+			return i;
+			}
+			else
+			{
+				p = p->next;
+				i++;
+			}
+		}
+		return -1;
+	}
+	break;
+	case 1:
+	{
+		i = 1;
+		while(NULL != p)
+		{
+			if (!strcmp(str,p->data.mphone)) 
+			{
+			return i;
+			}
+			else
+			{
+				p = p->next;
+				i++;
+			}
+		}
+		return -1;
+	}
+	break;
+	default:return -1;
+	}
+}
+ 
+ 
+Status query(llist L)
+{
+	char sel=1,name[12],mphone[12];
+	int i,j;
+	DataType e;
+	llist p;
+	while('0' != sel)
+	{
+	sel = menu(menu_query1,6);
+	switch (sel)
+	{
+		case '1':
+		{
+			printf("请输入姓名:");
+			fgets_wrapper(name,12,stdin);
+			j = LocateList(L,name,0);
+			if (-1 != j)
+			{
+				printf("查询到记录，显示如下:\n");
+				GetElem(L,j,&e);
+				output(e);
+				printf("按任意键继续...\n");
+				getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '2':
+		{
+			printf("请输入手机号:");
+			fgets_wrapper(mphone,12,stdin);
+			j = LocateList(L,mphone,1);
+			if (-1 != j)
+			{
+				printf("查询到记录，显示如下:\n");
+				GetElem(L,j,&e);
+				output(e);
+				printf("按任意键继续...\n");
+				getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '3':
+		{
+			if ( NULL == L->next)
+			{
+				printf("当前还没有任何记录\n");
+				printf("按任意键继续...\n");
+				getchar();
+			}
+			else
+			{
+			p = L->next;
+			i=1;
+			//for(i=0; i<L.length; i++)
+			while( NULL != p)
+			{
+				printf("第%d条记录\n",i);
+				output(p->data);
+				printf("\n");
+				p = p->next;
+				i++;
+			}
+			printf("按任意键继续...\n");
+			getchar();
+			}
+		} break;
+		case '0':break;
+		default:printf("错误输入\n");break;
+	}
+	}
+	return TRUE;
+}
+ 
+ 
+Status delete(llist *L)
+{
+	char sel=1,yorno,name[12],mphone[12];
+	int j;
+	DataType e;
+	while('0' != sel)
+	{
+	sel = menu(menu_delete1,5);
+	switch (sel)
+	{
+		case '1':
+		{
+			printf("请输入姓名:");
+			fgets_wrapper(name,12,stdin);
+			j = LocateList(*L,name,0);
+			if (-1 != j)
+			{
+				GetElem(*L,j,&e);
+				output(e);
+				ListDelete(L,j,&e);
+				printf("已删除\n");
+			    printf("按任意键继续...\n");
+			    getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '2':
+		{
+			printf("请输入手机号:");
+			fgets_wrapper(mphone,12,stdin);
+			j = LocateList(*L,mphone,1);
+			if (-1 != j)
+			{
+				GetElem(*L,j,&e);
+				output(e);
+				ListDelete(L,j,&e);
+				printf("已删除\n");
+			    printf("按任意键继续...\n");
+			    getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '3':
+		{
+			printf("你确定全部删除吗？(y/n)");
+			scanf(" %c",&yorno);
+			if ('y' == yorno || 'Y' == yorno)
+			{
+				ClearList(L);
+				printf("全部记录已经删除\n");
+			}
+		}break;
+		case '0':break;
+		default:printf("错误输入\n");break;
+	}
+	}
+	return TRUE;
+}
+ 
+Status modify(llist *L)
+{
+	char sel=1,name[12],mphone[12];
+	int j;
+	DataType e;
+	while('0' != sel)
+	{
+	sel = menu(menu_modify1,5);
+	switch (sel)
+	{
+		case '1':
+		{
+			printf("请输入姓名:");
+			fgets_wrapper(name,12,stdin);
+			j = LocateList(*L,name,0);
+			if (-1 != j)
+			{
+				GetElem(*L,j,&e);
+				output(e);
+				ListDelete(L,j,&e);
+				input(&e);
+				ListInsert(L,j,e);
+			    printf("已修改,按任意键继续...\n");
+			    getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '2':
+		{
+			printf("请输入手机号:");
+			fgets_wrapper(mphone,12,stdin);
+			j = LocateList(*L,mphone,1);
+			if (-1 != j)
+			{
+				GetElem(*L,j,&e);
+				output(e);
+				ListDelete(L,j,&e);
+				input(&e);
+				ListInsert(L,j,e);
+			    printf("已修改,按任意键继续...\n");
+			    getchar();
+			}
+			else
+			{
+				printf("查无此人，按任意键继续...\n");
+				getchar();
+			}
+		} break;
+		case '0':break;
+		default:printf("错误输入\n");break;
+	}
+	}
+	return TRUE;
+}
+int main(int argc,char *argv[])
+{
+	llist txl;
+	int k;
+	Status flag;
+	DataType e;
+	char sel;
+	flag = InitList(&txl);
+	if (!flag)
+	{
+		printf("内存分配失败，按任意键退出...\n");
+		getchar();
+		exit(0);
+	}
+	#if 0
+	printf("txl length = %d\n",ListLength(txl));
+	printf("txl is empty? = %d\n",ListEmpty(txl));
+	//头插
+	input(&e);
+	ListInsert(&txl,1,e);
+	printf("length=%d\n",ListLength(txl));
+	//尾插
+	input(&e);
+	ListInsert(&txl,ListLength(txl)+1,e);
+	printf("length=%d\n",ListLength(txl));
+	//头插
+	input(&e);12
+	ListInsert(&txl,1,e);
+	printf("length=%d\n",ListLength(txl));
+	GetElem(txl,1,&e);
+	output(e);
+	GetElem(txl,2,&e);
+	output(e);
+	ListDelete(&txl,1,&e);
+	output(e);
+	GetElem(txl,1,&e);
+	output(e);
+	printf("length=%d\n",ListLength(txl));
+	ClearList(&txl);
+	printf("txl length = %d\n",ListLength(txl));
+	printf("txl is empty? = %d\n",ListEmpty(txl));
+    k = LocateList(txl,"feng",0);
+	printf("k=%d\n",k);
+	memset(&e,0,sizeof(DataType));
+	if( FALSE == GetElem(txl,k,&e))
+	{
+		printf("在位置%d处没有取到值\n",k);
+	}
+	output(e);
+	#endif
+	while (1)
+	{
+	sel = menu(menu_1,7);
+	switch (sel)
+	{
+		case '1':memset(&e,0,sizeof(DataType));input(&e);ListInsert(&txl,1,e);break;
+		case '2':delete(&txl);break;
+		case '3':modify(&txl);break;
+		case '4':query(txl);break;
+		case '0':printf("谢谢使用本软件，按任意键退出...\n");getchar();exit(0);break;
+		default:printf("错误输入\n");break;
+	}
+	}
+	return 0;
+}
